@@ -124,15 +124,137 @@ function showResult() {
     document.getElementById('navigation-buttons').style.display = 'none';
     document.getElementById('progress-counter').style.display = 'none';
     
-    // Simple logic to determine siding type (you may want to expand this)
-    let sidingType = "Cedar";
-    if (answers[0] <= 1 && answers[3] <= 1) {
-        sidingType = "Pine";
-    } else if (answers[2] >= 3 || answers[4] >= 3) {
-        sidingType = "Redwood";
+    const sidingOptions = {
+        cedar: { score: 0, name: "Cedar wood siding" },
+        pine: { score: 0, name: "Pine wood siding" },
+        redwood: { score: 0, name: "Redwood siding" },
+        engineered: { score: 0, name: "Engineered wood" },
+        douglasFir: { score: 0, name: "Douglas fir wood" },
+        cypress: { score: 0, name: "Cypress wood" },
+        thermallyModified: { score: 0, name: "Thermally modified wood" },
+        fiberCement: { score: 0, name: "Fiber cement siding" }
+    };
+
+    // Budget (Q1)
+    if (answers[0] === 0) {
+        sidingOptions.pine.score += 2;
+        sidingOptions.engineered.score += 1;
+    } else if (answers[0] === 1) {
+        sidingOptions.cedar.score += 1;
+        sidingOptions.douglasFir.score += 2;
+    } else if (answers[0] === 2) {
+        sidingOptions.cedar.score += 2;
+        sidingOptions.redwood.score += 2;
+        sidingOptions.cypress.score += 1;
+    } else {
+        sidingOptions.redwood.score += 2;
+        sidingOptions.thermallyModified.score += 2;
+        sidingOptions.fiberCement.score += 1;
     }
-    
-    resultContainer.innerHTML = `<h2>Result</h2><p>Based on your answers, we recommend ${sidingType} siding for your home.</p>`;
+
+    // Square footage (Q2)
+    if (answers[1] <= 1) {
+        sidingOptions.cedar.score += 1;
+        sidingOptions.pine.score += 1;
+    } else {
+        sidingOptions.engineered.score += 1;
+        sidingOptions.fiberCement.score += 2;
+    }
+
+    // Climate (Q3)
+    if (answers[2] === 0) { // Hot and dry
+        sidingOptions.redwood.score += 2;
+        sidingOptions.thermallyModified.score += 2;
+    } else if (answers[2] === 1) { // Hot and humid
+        sidingOptions.cypress.score += 2;
+        sidingOptions.fiberCement.score += 2;
+    } else if (answers[2] === 2) { // Cold and dry
+        sidingOptions.cedar.score += 2;
+        sidingOptions.douglasFir.score += 1;
+    } else if (answers[2] === 3) { // Cold and wet
+        sidingOptions.cedar.score += 2;
+        sidingOptions.fiberCement.score += 2;
+    } else { // Moderate
+        sidingOptions.pine.score += 1;
+        sidingOptions.engineered.score += 1;
+    }
+
+    // Maintenance (Q4)
+    if (answers[3] === 0) {
+        sidingOptions.fiberCement.score += 2;
+        sidingOptions.engineered.score += 1;
+    } else if (answers[3] === 1) {
+        sidingOptions.cedar.score += 1;
+        sidingOptions.thermallyModified.score += 2;
+    } else if (answers[3] === 2) {
+        sidingOptions.redwood.score += 2;
+        sidingOptions.cypress.score += 1;
+    } else {
+        sidingOptions.fiberCement.score += 2;
+        sidingOptions.engineered.score += 2;
+    }
+
+    // Architectural style (Q5)
+    if (answers[4] === 0) {
+        sidingOptions.cedar.score += 2;
+        sidingOptions.pine.score += 1;
+    } else if (answers[4] === 1) {
+        sidingOptions.thermallyModified.score += 2;
+        sidingOptions.fiberCement.score += 1;
+    } else if (answers[4] === 2 || answers[4] === 4) {
+        sidingOptions.engineered.score += 2;
+        sidingOptions.fiberCement.score += 1;
+    } else {
+        sidingOptions.redwood.score += 2;
+        sidingOptions.cypress.score += 1;
+    }
+
+    // Material preference (Q6)
+    if (answers[5] === 0) {
+        Object.keys(sidingOptions).forEach(key => {
+            if (key !== 'engineered' && key !== 'fiberCement') {
+                sidingOptions[key].score += 2;
+            }
+        });
+    } else if (answers[5] === 1) {
+        sidingOptions.engineered.score += 3;
+    } else if (answers[5] === 2) {
+        sidingOptions.engineered.score += 2;
+        Object.keys(sidingOptions).forEach(key => {
+            if (key !== 'engineered' && key !== 'fiberCement') {
+                sidingOptions[key].score += 1;
+            }
+        });
+    } else {
+        // No additional scoring for "Open to all options"
+    }
+
+    // Determine the top recommendation
+    const topRecommendation = Object.keys(sidingOptions).reduce((a, b) => 
+        sidingOptions[a].score > sidingOptions[b].score ? a : b
+    );
+
+
+    // Explanations for each siding type
+    const explanations = {
+        cedar: "Cedar is known for its natural beauty, durability, and insect-resistant properties. It performs well in various climates and is a great choice for traditional architectural styles.",
+        pine: "Pine is an economical option that offers a rustic look. It's suitable for moderate climates and can be a good choice for those on a budget.",
+        redwood: "Redwood is prized for its rich color, natural resistance to decay, and ability to withstand harsh weather conditions. It's an excellent choice for homes in challenging climates.",
+        engineered: "Engineered wood combines the beauty of real wood with enhanced durability and lower maintenance requirements. It's a versatile option suitable for various architectural styles and climates.",
+        douglasFir: "Douglas fir is known for its strength and resistance to weathering. It's a good mid-range option that performs well in colder climates.",
+        cypress: "Cypress wood is naturally resistant to insects and decay, making it a great choice for humid climates. It has a unique grain pattern that adds character to your home.",
+        thermallyModified: "Thermally modified wood undergoes a special heating process that enhances its durability and stability. It's an excellent choice for those who want the look of natural wood with improved performance.",
+        fiberCement: "Fiber cement siding offers exceptional durability, low maintenance, and fire resistance. It's a versatile option that can mimic the look of wood while providing superior longevity."
+    };
+
+    // Display the result
+    let resultHTML = `<h2>Your Wood Siding Recommendation</h2>
+    <p>Based on your answers, our recommendation is: <strong>${sidingOptions[topRecommendation].name}</strong></p>
+    <p><strong>Why this recommendation:</strong> ${explanations[topRecommendation]}</p>
+    <p>Factors that influenced this recommendation include your budget, climate, maintenance preferences, and architectural style.</p>
+    <p>Do you want to see this on your own home? <a href="https://appbuilder.renoworks.com/signup?utm_source=SEO&utm_medium=design_inspiration&utm_campaign=wood_siding&utm_id=self_sign_up" target="_blank">Click here to visualize this product on your own home.</a></p>`;
+
+    resultContainer.innerHTML = resultHTML;
     resultContainer.style.display = 'block';
 }
 
